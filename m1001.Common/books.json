@@ -1,0 +1,37 @@
+﻿{
+  "books": [
+    {
+      "name": "Hobbit",
+      "author": "Tolkien",
+      "count": 5,
+      "genre": "fantasy",
+      "year": 2014
+    },
+    {
+      "name": "Lord of the Rings",
+      "author": "Tolkien",
+      "count": 3,
+      "genre": "fantasy",
+      "year": 2015
+    },
+    {
+      "name": "Kolobok",
+      "count": 10,
+      "genre": "kids",
+      "year": 2000
+    },
+    {
+      "name": "Repka",
+      "count": 11,
+      "genre": "kids",
+      "year": 2000
+    },
+    {
+      "name": "Dyadya Stiopa",
+      "author": "Mihalkov",
+      "count": 1,
+      "genre": "kids",
+      "year": 2001
+    }
+  ]
+}
