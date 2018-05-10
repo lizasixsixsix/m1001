@@ -86,9 +86,19 @@ namespace m1001.Queries
         {
             var books = collection.Find(
                 BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 1}}"))
+                .Project(
+                BsonSerializer.Deserialize<BsonDocument>("{_id: 0, name: 1}"))
+                .Sort("{name: 1}")
                 .ToList();
 
             Assert.IsTrue(books.Count == 4);
+
+            var bookss = collection.Find(
+                    BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 1}}"))
+                .Limit(3)
+                .ToList();
+
+            Assert.IsTrue(bookss.Count == 3);
         }
 
         [TestMethod]

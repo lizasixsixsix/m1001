@@ -83,9 +83,16 @@ namespace m1001.Linq
         [TestMethod]
         public void BooksCountMoreThanOne()
         {
-            var books = queryable.Where(b => b.count > 1);
+            var books = queryable.Where(b => b.count > 1)
+                .Select(b => new { b.name })
+                .OrderBy(bb => bb.name);
 
             Assert.IsTrue(books.Count() == 4);
+
+            var bookss = queryable.Where(b => b.count > 1)
+                .Take(3);
+
+            Assert.IsTrue(bookss.Count() == 3);
         }
 
         [TestMethod]
