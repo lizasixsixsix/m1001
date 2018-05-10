@@ -1,15 +1,15 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
+using System.Linq;
+
 using Microsoft.Extensions.Configuration;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
-using System.IO;
-using System;
+
 using m1001.Common;
-using System.Linq;
-using MongoDB.Driver.Builders;
 
 namespace m1001.Queries
 {
@@ -18,9 +18,9 @@ namespace m1001.Queries
     {
         public static IConfiguration Configuration { get; set; }
 
-        public IMongoQueryable<Book> outCollection;
+        public IMongoQueryable<Book> queryable;
 
-        public IMongoCollection<Book> outCollectionn;
+        public IMongoCollection<Book> collection;
 
         [TestInitialize]
         public void Initialize()
@@ -54,7 +54,7 @@ namespace m1001.Queries
                 database.CreateCollection(collName);
             }
 
-            var collection = database.GetCollection<BsonDocument>(collName);
+            var coll = database.GetCollection<BsonDocument>(collName);
 
             var data = File.ReadAllText("books.json");
 
@@ -64,18 +64,19 @@ namespace m1001.Queries
 
             foreach (var element in array)
             {
-                collection.InsertOne(element.AsBsonDocument);
+                coll.InsertOne(element.AsBsonDocument);
             }
 
-            outCollection = database.GetCollection<Book>(collName).AsQueryable();
+            queryable = database.GetCollection<Book>(collName).AsQueryable();
 
-            outCollectionn = database.GetCollection<Book>(collName);
+            collection = database.GetCollection<Book>(collName);
         }
 
         [TestMethod]
         public void BooksAdded()
         {
-            var books = outCollectionn.Find(BsonSerializer.Deserialize<BsonDocument>("{}")).ToList();
+            var books = collection.Find(
+                BsonSerializer.Deserialize<BsonDocument>("{}")).ToList();
 
             Assert.IsTrue(books.Count == 5);
         }
@@ -83,8 +84,9 @@ namespace m1001.Queries
         [TestMethod]
         public void BooksCountMoreThanOne()
         {
-            var books = outCollectionn.Find(
-                BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 1}}")).ToList();
+            var books = collection.Find(
+                BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 1}}"))
+                .ToList();
 
             Assert.IsTrue(books.Count == 4);
         }
@@ -92,12 +94,14 @@ namespace m1001.Queries
         [TestMethod]
         public void BooksWithMaxMinCount()
         {
-            var bookMax = outCollectionn.Find(BsonSerializer.Deserialize<BsonDocument>("{}"))
+            var bookMax = collection.Find(
+                BsonSerializer.Deserialize<BsonDocument>("{}"))
                 .Sort("{count: -1}").Limit(1).Single();
 
             Assert.IsTrue(bookMax.count == 11);
 
-            var bookMin = outCollectionn.Find(BsonSerializer.Deserialize<BsonDocument>("{}"))
+            var bookMin = collection.Find(
+                BsonSerializer.Deserialize<BsonDocument>("{}"))
                 .Sort("{count: 1}").Limit(1).Single();
 
             Assert.IsTrue(bookMin.count == 1);
@@ -106,7 +110,7 @@ namespace m1001.Queries
         [TestMethod]
         public void DistinctAuthors()
         {
-            var authors = outCollectionn.Distinct(
+            var authors = collection.Distinct(
                 new StringFieldDefinition<Book, string>("author"),
                 BsonSerializer.Deserialize<BsonDocument>("{}"))
                 .ToList();
@@ -117,8 +121,9 @@ namespace m1001.Queries
         [TestMethod]
         public void BooksWithoutAuthor()
         {
-            var books = outCollectionn.Find(
-                BsonSerializer.Deserialize<BsonDocument>("{author: {$exists: false}}")).ToList();
+            var books = collection.Find(
+                BsonSerializer.Deserialize<BsonDocument>("{author: {$exists: false}}"))
+                .ToList();
 
             Assert.IsTrue(books.Count == 2);
         }
@@ -147,34 +152,37 @@ namespace m1001.Queries
                     return Array.sum(values)
                 }");
 
-            var oldOverallCount = outCollectionn.MapReduce<SimpleReduceResult<int>>(map, reduce)
+            var oldOverallCount = collection
+                .MapReduce<SimpleReduceResult<int>>(map, reduce)
                 .Single().value;
 
-            outCollectionn.UpdateMany(
+            collection.UpdateMany(
                     BsonSerializer.Deserialize<BsonDocument>("{}"),
                     BsonSerializer.Deserialize<BsonDocument>("{$inc: {count: 1}}"));
 
-            var newOverallCount = outCollectionn.MapReduce<SimpleReduceResult<int>>(map, reduce)
+            var newOverallCount = collection
+                .MapReduce<SimpleReduceResult<int>>(map, reduce)
                 .Single().value;
 
-            Assert.IsTrue(newOverallCount - oldOverallCount == outCollection.Count());
+            Assert.IsTrue(newOverallCount - oldOverallCount == queryable.Count());
         }
 
         [TestMethod]
         public void AddNewGenre()
         {
-            var oldGenreCount = outCollection.Select(b => b.genre.Length).Max();
+            var oldGenreCount = queryable.Select(b => b.genre.Length).Max();
 
-            outCollectionn.UpdateMany(BsonSerializer.Deserialize<BsonDocument>("{genre: 'fantasy'}"),
-                BsonSerializer.Deserialize<BsonDocument>("{$addToSet:{genre: 'favority'}}"));
+            collection.UpdateMany(
+                BsonSerializer.Deserialize<BsonDocument>("{genre: 'fantasy'}"),
+                BsonSerializer.Deserialize<BsonDocument>("{$addToSet: {genre: 'favority'}}"));
 
-            var newGenreCount = outCollection.Select(b => b.genre.Length).Max();
+            var newGenreCount = queryable.Select(b => b.genre.Length).Max();
 
-            outCollectionn.UpdateMany(BsonSerializer.Deserialize<BsonDocument>("{genre: 'fantasy'}"),
-                BsonSerializer.Deserialize<BsonDocument>(
-                    "{$addToSet:{genre: 'favority'}}"));
+            collection.UpdateMany(
+                BsonSerializer.Deserialize<BsonDocument>("{genre: 'fantasy'}"),
+                BsonSerializer.Deserialize<BsonDocument>("{$addToSet: {genre: 'favority'}}"));
 
-            var newerGenreCount = outCollection.Select(b => b.genre.Length).Max();
+            var newerGenreCount = queryable.Select(b => b.genre.Length).Max();
 
             Assert.IsTrue(newGenreCount > oldGenreCount);
 
@@ -184,11 +192,12 @@ namespace m1001.Queries
         [TestMethod]
         public void DeleteBooksWithCountLessThanThree()
         {
-            var oldBooksCount = outCollection.Count();
+            var oldBooksCount = queryable.Count();
 
-            outCollectionn.DeleteMany(BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 3}}"));
+            collection.DeleteMany(
+                BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 3}}"));
 
-            var newBooksCount = outCollection.Count();
+            var newBooksCount = queryable.Count();
 
             Assert.IsTrue(newBooksCount < oldBooksCount);
         }
@@ -196,9 +205,10 @@ namespace m1001.Queries
         [TestMethod]
         public void DeleteAllBooks()
         {
-            outCollectionn.DeleteMany(BsonSerializer.Deserialize<BsonDocument>("{}"));
+            collection.DeleteMany(
+                BsonSerializer.Deserialize<BsonDocument>("{}"));
 
-            Assert.IsFalse(outCollection.Any());
+            Assert.IsFalse(queryable.Any());
         }
     }
 }

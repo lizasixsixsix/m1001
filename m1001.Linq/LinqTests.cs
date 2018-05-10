@@ -1,14 +1,15 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
+using System.Linq;
+
 using Microsoft.Extensions.Configuration;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
-using System.IO;
-using System;
+
 using m1001.Common;
-using System.Linq;
 
 namespace m1001.Linq
 {
@@ -17,9 +18,9 @@ namespace m1001.Linq
     {
         public static IConfiguration Configuration { get; set; }
 
-        public IMongoQueryable<Book> outCollection;
+        public IMongoQueryable<Book> queryable;
 
-        public IMongoCollection<Book> outCollectionn;
+        public IMongoCollection<Book> collection;
 
         [TestInitialize]
         public void Initialize()
@@ -53,7 +54,7 @@ namespace m1001.Linq
                 database.CreateCollection(collName);
             }
 
-            var collection = database.GetCollection<BsonDocument>(collName);
+            var coll = database.GetCollection<BsonDocument>(collName);
 
             var data = File.ReadAllText("books.json");
 
@@ -63,26 +64,26 @@ namespace m1001.Linq
 
             foreach (var element in array)
             {
-                collection.InsertOne(element.AsBsonDocument);
+                coll.InsertOne(element.AsBsonDocument);
             }
 
-            outCollection = database.GetCollection<Book>(collName).AsQueryable();
+            queryable = database.GetCollection<Book>(collName).AsQueryable();
 
-            outCollectionn = database.GetCollection<Book>(collName);
+            collection = database.GetCollection<Book>(collName);
         }
 
         [TestMethod]
         public void BooksAdded()
         {
-            Assert.IsTrue(outCollection.Any());
+            Assert.IsTrue(queryable.Any());
 
-            Assert.IsTrue(outCollection.Count() == 5);
+            Assert.IsTrue(queryable.Count() == 5);
         }
 
         [TestMethod]
         public void BooksCountMoreThanOne()
         {
-            var books = outCollection.Where(b => b.count > 1);
+            var books = queryable.Where(b => b.count > 1);
 
             Assert.IsTrue(books.Count() == 4);
         }
@@ -90,11 +91,11 @@ namespace m1001.Linq
         [TestMethod]
         public void BooksWithMaxMinCount()
         {
-            var bookMax = outCollection.OrderByDescending(b => b.count).First();
+            var bookMax = queryable.OrderByDescending(b => b.count).First();
 
             Assert.IsTrue(bookMax.count == 11);
 
-            var bookMin = outCollection.OrderBy(b => b.count).First();
+            var bookMin = queryable.OrderBy(b => b.count).First();
 
             Assert.IsTrue(bookMin.count == 1);
         }
@@ -102,7 +103,8 @@ namespace m1001.Linq
         [TestMethod]
         public void DistinctAuthors()
         {
-            var authors = outCollection.Where(b => b.author != null).Select(b => b.author).Distinct();
+            var authors = queryable.Where(b => b.author != null)
+                .Select(b => b.author).Distinct();
 
             Assert.IsTrue(authors.Count() == 2);
         }
@@ -110,7 +112,7 @@ namespace m1001.Linq
         [TestMethod]
         public void BooksWithoutAuthor()
         {
-            var books = outCollection.Where(b => b.author == null);
+            var books = queryable.Where(b => b.author == null);
 
             Assert.IsTrue(books.Count() == 2);
         }
@@ -118,30 +120,33 @@ namespace m1001.Linq
         [TestMethod]
         public void IncrementBooksCount()
         {
-            var oldOverallCount = outCollection.Sum(b => b.count);
+            var oldOverallCount = queryable.Sum(b => b.count);
 
-            outCollectionn.UpdateMany(Builders<Book>.Filter.Empty,
+            collection.UpdateMany(
+                Builders<Book>.Filter.Empty,
                 Builders<Book>.Update.Inc(b => b.count, 1));
 
-            var newOverallCount = outCollection.Sum(b => b.count);
+            var newOverallCount = queryable.Sum(b => b.count);
 
-            Assert.IsTrue(newOverallCount - oldOverallCount == outCollection.Count());
+            Assert.IsTrue(newOverallCount - oldOverallCount == queryable.Count());
         }
 
         [TestMethod]
         public void AddNewGenre()
         {
-            var oldGenreCount = outCollection.Select(b => b.genre.Length).Max();
+            var oldGenreCount = queryable.Select(b => b.genre.Length).Max();
 
-            outCollectionn.UpdateMany(Builders<Book>.Filter.Where(b => b.genre.Contains("fantasy")),
+            collection.UpdateMany(
+                Builders<Book>.Filter.Where(b => b.genre.Contains("fantasy")),
                 Builders<Book>.Update.AddToSet("genre", "favority"));
 
-            var newGenreCount = outCollection.Select(b => b.genre.Length).Max();
+            var newGenreCount = queryable.Select(b => b.genre.Length).Max();
 
-            outCollectionn.UpdateMany(Builders<Book>.Filter.Where(b => b.genre.Contains("fantasy")),
+            collection.UpdateMany(
+                Builders<Book>.Filter.Where(b => b.genre.Contains("fantasy")),
                 Builders<Book>.Update.AddToSet("genre", "favority"));
 
-            var newerGenreCount = outCollection.Select(b => b.genre.Length).Max();
+            var newerGenreCount = queryable.Select(b => b.genre.Length).Max();
 
             Assert.IsTrue(newGenreCount > oldGenreCount);
 
@@ -151,11 +156,12 @@ namespace m1001.Linq
         [TestMethod]
         public void DeleteBooksWithCountLessThanThree()
         {
-            var oldBooksCount = outCollection.Count();
+            var oldBooksCount = queryable.Count();
 
-            outCollectionn.DeleteMany(Builders<Book>.Filter.Where(b => b.count < 3));
+            collection.DeleteMany(
+                Builders<Book>.Filter.Where(b => b.count < 3));
 
-            var newBooksCount = outCollection.Count();
+            var newBooksCount = queryable.Count();
 
             Assert.IsTrue(newBooksCount < oldBooksCount);
         }
@@ -163,9 +169,10 @@ namespace m1001.Linq
         [TestMethod]
         public void DeleteAllBooks()
         {
-            outCollectionn.DeleteMany(Builders<Book>.Filter.Empty);
+            collection.DeleteMany(
+                Builders<Book>.Filter.Empty);
 
-            Assert.IsFalse(outCollection.Any());
+            Assert.IsFalse(queryable.Any());
         }
     }
 }
