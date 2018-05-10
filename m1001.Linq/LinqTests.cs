@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 
@@ -16,11 +17,11 @@ namespace m1001.Linq
     [TestClass]
     public class LinqTests
     {
-        public static IConfiguration Configuration { get; set; }
+        private static IConfiguration Configuration { get; set; }
 
-        public IMongoQueryable<Book> queryable;
+        private IMongoQueryable<Book> queryable;
 
-        public IMongoCollection<Book> collection;
+        private IMongoCollection<Book> collection;
 
         [TestInitialize]
         public void Initialize()
@@ -67,9 +68,9 @@ namespace m1001.Linq
                 coll.InsertOne(element.AsBsonDocument);
             }
 
-            queryable = database.GetCollection<Book>(collName).AsQueryable();
-
             collection = database.GetCollection<Book>(collName);
+
+            queryable = collection.AsQueryable();
         }
 
         [TestMethod]
@@ -78,6 +79,12 @@ namespace m1001.Linq
             Assert.IsTrue(queryable.Any());
 
             Assert.IsTrue(queryable.Count() == 5);
+
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.author + "\t" + bk.count
+                              + "\t" + bk.genre.Aggregate((a, b) => a + ", " + b)
+                              + "\t" + bk.year)
+                .Aggregate((a, b) => a + "\n\n" + b));
         }
 
         [TestMethod]
@@ -93,6 +100,14 @@ namespace m1001.Linq
                 .Take(3);
 
             Assert.IsTrue(bookss.Count() == 3);
+
+            Console.WriteLine(books.ToList()
+                .Select(bk => bk.name)
+                .Aggregate((a, b) => a + "\n\n" + b));
+
+            Console.WriteLine(bookss.ToList()
+                .Select(bk => bk.name + "\t" + bk.count)
+                .Aggregate((a, b) => a + "\n\n" + b));
         }
 
         [TestMethod]
@@ -105,6 +120,10 @@ namespace m1001.Linq
             var bookMin = queryable.OrderBy(b => b.count).First();
 
             Assert.IsTrue(bookMin.count == 1);
+
+            Console.WriteLine(bookMax.name + "\t" + bookMax.count
+                              + "\n\n"
+                              + bookMin.name + "\t" + bookMin.count);
         }
 
         [TestMethod]
@@ -114,6 +133,9 @@ namespace m1001.Linq
                 .Select(b => b.author).Distinct();
 
             Assert.IsTrue(authors.Count() == 2);
+
+            Console.WriteLine(authors.ToList()
+                .Aggregate((a, b) => a + "\t" + b));
         }
 
         [TestMethod]
@@ -122,6 +144,10 @@ namespace m1001.Linq
             var books = queryable.Where(b => b.author == null);
 
             Assert.IsTrue(books.Count() == 2);
+
+            Console.WriteLine(books.ToList()
+                .Select(bk => bk.name)
+                .Aggregate((a, b) => a + "\t" + b));
         }
 
         [TestMethod]
@@ -136,6 +162,10 @@ namespace m1001.Linq
             var newOverallCount = queryable.Sum(b => b.count);
 
             Assert.IsTrue(newOverallCount - oldOverallCount == queryable.Count());
+
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.count)
+                .Aggregate((a, b) => a + "\n\n" + b));
         }
 
         [TestMethod]
@@ -158,6 +188,10 @@ namespace m1001.Linq
             Assert.IsTrue(newGenreCount > oldGenreCount);
 
             Assert.IsTrue(newerGenreCount == newGenreCount);
+
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.genre.Aggregate((a, b) => a + ", " + b))
+                .Aggregate((a, b) => a + "\n\n" + b));
         }
 
         [TestMethod]
@@ -171,6 +205,10 @@ namespace m1001.Linq
             var newBooksCount = queryable.Count();
 
             Assert.IsTrue(newBooksCount < oldBooksCount);
+
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.count)
+                .Aggregate((a, b) => a + "\n\n" + b));
         }
 
         [TestMethod]

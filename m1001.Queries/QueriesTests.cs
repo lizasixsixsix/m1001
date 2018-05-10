@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 
@@ -16,11 +17,11 @@ namespace m1001.Queries
     [TestClass]
     public class QueriesTests
     {
-        public static IConfiguration Configuration { get; set; }
+        private static IConfiguration Configuration { get; set; }
 
-        public IMongoQueryable<Book> queryable;
+        private IMongoQueryable<Book> queryable;
 
-        public IMongoCollection<Book> collection;
+        private IMongoCollection<Book> collection;
 
         [TestInitialize]
         public void Initialize()
@@ -67,9 +68,9 @@ namespace m1001.Queries
                 coll.InsertOne(element.AsBsonDocument);
             }
 
-            queryable = database.GetCollection<Book>(collName).AsQueryable();
-
             collection = database.GetCollection<Book>(collName);
+
+            queryable = collection.AsQueryable();
         }
 
         [TestMethod]
@@ -79,15 +80,26 @@ namespace m1001.Queries
                 BsonSerializer.Deserialize<BsonDocument>("{}")).ToList();
 
             Assert.IsTrue(books.Count == 5);
+
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.author + "\t" + bk.count
+                              + "\t" + bk.genre.Aggregate((a, b) => a + ", " + b)
+                              + "\t" + bk.year)
+                .Aggregate((a, b) => a + "\n\n" + b));
+        }
+
+        private class NameOnly
+        {
+            public string name { get; set; }
         }
 
         [TestMethod]
         public void _02_BooksCountMoreThanOne()
         {
             var books = collection.Find(
-                BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 1}}"))
+                    BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 1}}"))
                 .Project(
-                BsonSerializer.Deserialize<BsonDocument>("{_id: 0, name: 1}"))
+                    BsonSerializer.Deserialize<BsonDocument>("{_id: 0, name: 1}"))
                 .Sort("{name: 1}")
                 .ToList();
 
@@ -99,6 +111,14 @@ namespace m1001.Queries
                 .ToList();
 
             Assert.IsTrue(bookss.Count == 3);
+
+            Console.WriteLine(books
+                .Select(bk => BsonSerializer.Deserialize<NameOnly>(bk).name)
+                .Aggregate((a, b) => a + "\n\n" + b));
+
+            Console.WriteLine(bookss.ToList()
+                .Select(bk => bk.name + "\t" + bk.count)
+                .Aggregate((a, b) => a + "\n\n" + b));
         }
 
         [TestMethod]
@@ -115,6 +135,10 @@ namespace m1001.Queries
                 .Sort("{count: 1}").Limit(1).Single();
 
             Assert.IsTrue(bookMin.count == 1);
+
+            Console.WriteLine(bookMax.name + "\t" + bookMax.count
+                              + "\n\n"
+                              + bookMin.name + "\t" + bookMin.count);
         }
 
         [TestMethod]
@@ -126,6 +150,9 @@ namespace m1001.Queries
                 .ToList();
 
             Assert.IsTrue(authors.Count == 2);
+
+            Console.WriteLine(authors
+                .Aggregate((a, b) => a + "\t" + b));
         }
 
         [TestMethod]
@@ -136,9 +163,13 @@ namespace m1001.Queries
                 .ToList();
 
             Assert.IsTrue(books.Count == 2);
+
+            Console.WriteLine(books
+                .Select(bk => bk.name)
+                .Aggregate((a, b) => a + "\t" + b));
         }
 
-        public class ReduceResult<T>
+        private class ReduceResult<T>
         {
             public string _id { get; set; }
 
@@ -175,6 +206,10 @@ namespace m1001.Queries
                 .Single().value;
 
             Assert.IsTrue(newOverallCount - oldOverallCount == queryable.Count());
+
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.count)
+                .Aggregate((a, b) => a + "\n\n" + b));
         }
 
         [TestMethod]
@@ -197,6 +232,10 @@ namespace m1001.Queries
             Assert.IsTrue(newGenreCount > oldGenreCount);
 
             Assert.IsTrue(newerGenreCount == newGenreCount);
+
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.genre.Aggregate((a, b) => a + ", " + b))
+                .Aggregate((a, b) => a + "\n\n" + b));
         }
 
         [TestMethod]
@@ -210,6 +249,10 @@ namespace m1001.Queries
             var newBooksCount = queryable.Count();
 
             Assert.IsTrue(newBooksCount < oldBooksCount);
+
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.count)
+                .Aggregate((a, b) => a + "\n\n" + b));
         }
 
         [TestMethod]
