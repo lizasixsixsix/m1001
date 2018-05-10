@@ -73,7 +73,7 @@ namespace m1001.Queries
         }
 
         [TestMethod]
-        public void BooksAdded()
+        public void _01_BooksAdded()
         {
             var books = collection.Find(
                 BsonSerializer.Deserialize<BsonDocument>("{}")).ToList();
@@ -82,7 +82,7 @@ namespace m1001.Queries
         }
 
         [TestMethod]
-        public void BooksCountMoreThanOne()
+        public void _02_BooksCountMoreThanOne()
         {
             var books = collection.Find(
                 BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 1}}"))
@@ -102,7 +102,7 @@ namespace m1001.Queries
         }
 
         [TestMethod]
-        public void BooksWithMaxMinCount()
+        public void _03_BooksWithMaxMinCount()
         {
             var bookMax = collection.Find(
                 BsonSerializer.Deserialize<BsonDocument>("{}"))
@@ -118,7 +118,7 @@ namespace m1001.Queries
         }
 
         [TestMethod]
-        public void DistinctAuthors()
+        public void _04_DistinctAuthors()
         {
             var authors = collection.Distinct(
                 new StringFieldDefinition<Book, string>("author"),
@@ -129,7 +129,7 @@ namespace m1001.Queries
         }
 
         [TestMethod]
-        public void BooksWithoutAuthor()
+        public void _05_BooksWithoutAuthor()
         {
             var books = collection.Find(
                 BsonSerializer.Deserialize<BsonDocument>("{author: {$exists: false}}"))
@@ -138,15 +138,15 @@ namespace m1001.Queries
             Assert.IsTrue(books.Count == 2);
         }
 
-        public class SimpleReduceResult<T>
+        public class ReduceResult<T>
         {
-            public string Id { get; set; }
+            public string _id { get; set; }
 
             public T value { get; set; }
         }
 
         [TestMethod]
-        public void IncrementBooksCount()
+        public void _06_IncrementBooksCount()
         {
             var map = new BsonJavaScript(
                 @"
@@ -163,7 +163,7 @@ namespace m1001.Queries
                 }");
 
             var oldOverallCount = collection
-                .MapReduce<SimpleReduceResult<int>>(map, reduce)
+                .MapReduce<ReduceResult<int>>(map, reduce)
                 .Single().value;
 
             collection.UpdateMany(
@@ -171,14 +171,14 @@ namespace m1001.Queries
                     BsonSerializer.Deserialize<BsonDocument>("{$inc: {count: 1}}"));
 
             var newOverallCount = collection
-                .MapReduce<SimpleReduceResult<int>>(map, reduce)
+                .MapReduce<ReduceResult<int>>(map, reduce)
                 .Single().value;
 
             Assert.IsTrue(newOverallCount - oldOverallCount == queryable.Count());
         }
 
         [TestMethod]
-        public void AddNewGenre()
+        public void _07_AddNewGenre()
         {
             var oldGenreCount = queryable.Select(b => b.genre.Length).Max();
 
@@ -200,7 +200,7 @@ namespace m1001.Queries
         }
 
         [TestMethod]
-        public void DeleteBooksWithCountLessThanThree()
+        public void _08_DeleteBooksWithCountLessThanThree()
         {
             var oldBooksCount = queryable.Count();
 
@@ -213,7 +213,7 @@ namespace m1001.Queries
         }
 
         [TestMethod]
-        public void DeleteAllBooks()
+        public void _09_DeleteAllBooks()
         {
             collection.DeleteMany(
                 BsonSerializer.Deserialize<BsonDocument>("{}"));

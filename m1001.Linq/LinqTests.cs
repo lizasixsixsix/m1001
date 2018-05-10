@@ -73,7 +73,7 @@ namespace m1001.Linq
         }
 
         [TestMethod]
-        public void BooksAdded()
+        public void _01_BooksAdded()
         {
             Assert.IsTrue(queryable.Any());
 
@@ -81,7 +81,7 @@ namespace m1001.Linq
         }
 
         [TestMethod]
-        public void BooksCountMoreThanOne()
+        public void _02_BooksCountMoreThanOne()
         {
             var books = queryable.Where(b => b.count > 1)
                 .Select(b => new { b.name })
@@ -96,7 +96,7 @@ namespace m1001.Linq
         }
 
         [TestMethod]
-        public void BooksWithMaxMinCount()
+        public void _03_BooksWithMaxMinCount()
         {
             var bookMax = queryable.OrderByDescending(b => b.count).First();
 
@@ -108,7 +108,7 @@ namespace m1001.Linq
         }
 
         [TestMethod]
-        public void DistinctAuthors()
+        public void _04_DistinctAuthors()
         {
             var authors = queryable.Where(b => b.author != null)
                 .Select(b => b.author).Distinct();
@@ -117,7 +117,7 @@ namespace m1001.Linq
         }
 
         [TestMethod]
-        public void BooksWithoutAuthor()
+        public void _05_BooksWithoutAuthor()
         {
             var books = queryable.Where(b => b.author == null);
 
@@ -125,7 +125,7 @@ namespace m1001.Linq
         }
 
         [TestMethod]
-        public void IncrementBooksCount()
+        public void _06_IncrementBooksCount()
         {
             var oldOverallCount = queryable.Sum(b => b.count);
 
@@ -139,7 +139,7 @@ namespace m1001.Linq
         }
 
         [TestMethod]
-        public void AddNewGenre()
+        public void _07_AddNewGenre()
         {
             var oldGenreCount = queryable.Select(b => b.genre.Length).Max();
 
@@ -161,7 +161,7 @@ namespace m1001.Linq
         }
 
         [TestMethod]
-        public void DeleteBooksWithCountLessThanThree()
+        public void _08_DeleteBooksWithCountLessThanThree()
         {
             var oldBooksCount = queryable.Count();
 
@@ -174,7 +174,7 @@ namespace m1001.Linq
         }
 
         [TestMethod]
-        public void DeleteAllBooks()
+        public void _09_DeleteAllBooks()
         {
             collection.DeleteMany(
                 Builders<Book>.Filter.Empty);
