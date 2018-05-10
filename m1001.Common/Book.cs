@@ -12,7 +12,7 @@ namespace m1001.Common
 
         public int count { get; set; }
 
-        public string genre { get; set; }
+        public string[] genre { get; set; }
 
         public int year { get; set; }
     }
