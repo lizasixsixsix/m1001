@@ -43,7 +43,7 @@ namespace m1001.Linq
 
             MongoClient client = new MongoClient(url);
 
-            IMongoDatabase database = client.GetDatabase("mentoring");
+            IMongoDatabase database = client.GetDatabase(Configuration["db:database"]);
 
             var collName = "Books";
 
