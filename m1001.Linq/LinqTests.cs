@@ -27,8 +27,8 @@ namespace m1001.Linq
         public void Initialize()
         {
             var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.real.json");
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.real.json");
 
             Configuration = builder.Build();
 
