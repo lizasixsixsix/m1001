@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="microsoft.extensions.configuration.json" Version="2.0.2" />
     <PackageReference Include="mongocsharpdriver" Version="2.6.0" />
   </ItemGroup>
 
