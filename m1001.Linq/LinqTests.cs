@@ -51,7 +51,6 @@ namespace m1001.Linq
 
             if (database.GetCollection<BsonDocument>(collName) == null)
             {
-
                 database.CreateCollection(collName);
             }
 

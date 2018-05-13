@@ -51,7 +51,6 @@ namespace m1001.Queries
 
             if (database.GetCollection<BsonDocument>(collName) == null)
             {
-
                 database.CreateCollection(collName);
             }
 
@@ -77,7 +76,8 @@ namespace m1001.Queries
         public void _01_BooksAdded()
         {
             var books = collection.Find(
-                BsonSerializer.Deserialize<BsonDocument>("{}")).ToList();
+                    BsonSerializer.Deserialize<BsonDocument>("{}"))
+                .ToList();
 
             Assert.IsTrue(books.Count == 5);
 
@@ -125,13 +125,13 @@ namespace m1001.Queries
         public void _03_BooksWithMaxMinCount()
         {
             var bookMax = collection.Find(
-                BsonSerializer.Deserialize<BsonDocument>("{}"))
+                    BsonSerializer.Deserialize<BsonDocument>("{}"))
                 .Sort("{count: -1}").Limit(1).Single();
 
             Assert.IsTrue(bookMax.count == 11);
 
             var bookMin = collection.Find(
-                BsonSerializer.Deserialize<BsonDocument>("{}"))
+                    BsonSerializer.Deserialize<BsonDocument>("{}"))
                 .Sort("{count: 1}").Limit(1).Single();
 
             Assert.IsTrue(bookMin.count == 1);
@@ -145,8 +145,8 @@ namespace m1001.Queries
         public void _04_DistinctAuthors()
         {
             var authors = collection.Distinct(
-                new StringFieldDefinition<Book, string>("author"),
-                BsonSerializer.Deserialize<BsonDocument>("{}"))
+                    new StringFieldDefinition<Book, string>("author"),
+                    BsonSerializer.Deserialize<BsonDocument>("{}"))
                 .ToList();
 
             Assert.IsTrue(authors.Count == 2);
@@ -159,7 +159,7 @@ namespace m1001.Queries
         public void _05_BooksWithoutAuthor()
         {
             var books = collection.Find(
-                BsonSerializer.Deserialize<BsonDocument>("{author: {$exists: false}}"))
+                    BsonSerializer.Deserialize<BsonDocument>("{author: {$exists: false}}"))
                 .ToList();
 
             Assert.IsTrue(books.Count == 2);
@@ -198,8 +198,8 @@ namespace m1001.Queries
                 .Single().value;
 
             collection.UpdateMany(
-                    BsonSerializer.Deserialize<BsonDocument>("{}"),
-                    BsonSerializer.Deserialize<BsonDocument>("{$inc: {count: 1}}"));
+                BsonSerializer.Deserialize<BsonDocument>("{}"),
+                BsonSerializer.Deserialize<BsonDocument>("{$inc: {count: 1}}"));
 
             var newOverallCount = collection
                 .MapReduce<ReduceResult<int>>(map, reduce)
