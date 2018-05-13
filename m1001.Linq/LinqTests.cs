@@ -83,7 +83,7 @@ namespace m1001.Linq
                 .Select(bk => bk.name + "\t" + bk.author + "\t" + bk.count
                               + "\t" + bk.genre.Aggregate((a, b) => a + ", " + b)
                               + "\t" + bk.year)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
@@ -102,11 +102,13 @@ namespace m1001.Linq
 
             Console.WriteLine(books.ToList()
                 .Select(bk => bk.name)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
+
+            Console.WriteLine();
 
             Console.WriteLine(bookss.ToList()
                 .Select(bk => bk.name + "\t" + bk.count)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
@@ -134,7 +136,7 @@ namespace m1001.Linq
             Assert.IsTrue(authors.Count() == 2);
 
             Console.WriteLine(authors.ToList()
-                .Aggregate((a, b) => a + "\t" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
@@ -146,12 +148,18 @@ namespace m1001.Linq
 
             Console.WriteLine(books.ToList()
                 .Select(bk => bk.name)
-                .Aggregate((a, b) => a + "\t" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
         public void _06_IncrementBooksCount()
         {
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.count)
+                .Aggregate((a, b) => a + "\n" + b));
+
+            Console.WriteLine();
+
             var oldOverallCount = queryable.Sum(b => b.count);
 
             collection.UpdateMany(
@@ -164,7 +172,7 @@ namespace m1001.Linq
 
             Console.WriteLine(queryable.ToList()
                 .Select(bk => bk.name + "\t" + bk.count)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
@@ -190,7 +198,7 @@ namespace m1001.Linq
 
             Console.WriteLine(queryable.ToList()
                 .Select(bk => bk.name + "\t" + bk.genre.Aggregate((a, b) => a + ", " + b))
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
@@ -207,7 +215,7 @@ namespace m1001.Linq
 
             Console.WriteLine(queryable.ToList()
                 .Select(bk => bk.name + "\t" + bk.count)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]

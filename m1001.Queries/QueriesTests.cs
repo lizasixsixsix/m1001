@@ -75,8 +75,7 @@ namespace m1001.Queries
         [TestMethod]
         public void _01_BooksAdded()
         {
-            var books = collection.Find(
-                    BsonSerializer.Deserialize<BsonDocument>("{}"))
+            var books = collection.Find("{}")
                 .ToList();
 
             Assert.IsTrue(books.Count == 5);
@@ -85,7 +84,7 @@ namespace m1001.Queries
                 .Select(bk => bk.name + "\t" + bk.author + "\t" + bk.count
                               + "\t" + bk.genre.Aggregate((a, b) => a + ", " + b)
                               + "\t" + bk.year)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         private class NameOnly
@@ -96,17 +95,14 @@ namespace m1001.Queries
         [TestMethod]
         public void _02_BooksCountMoreThanOne()
         {
-            var books = collection.Find(
-                    BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 1}}"))
-                .Project(
-                    BsonSerializer.Deserialize<BsonDocument>("{_id: 0, name: 1}"))
+            var books = collection.Find("{count: {$gt: 1}}")
+                .Project("{_id: 0, name: 1}")
                 .Sort("{name: 1}")
                 .ToList();
 
             Assert.IsTrue(books.Count == 4);
 
-            var bookss = collection.Find(
-                    BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 1}}"))
+            var bookss = collection.Find("{count: {$gt: 1}}")
                 .Limit(3)
                 .ToList();
 
@@ -114,24 +110,24 @@ namespace m1001.Queries
 
             Console.WriteLine(books
                 .Select(bk => BsonSerializer.Deserialize<NameOnly>(bk).name)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
+
+            Console.WriteLine();
 
             Console.WriteLine(bookss.ToList()
                 .Select(bk => bk.name + "\t" + bk.count)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
         public void _03_BooksWithMaxMinCount()
         {
-            var bookMax = collection.Find(
-                    BsonSerializer.Deserialize<BsonDocument>("{}"))
+            var bookMax = collection.Find("{}")
                 .Sort("{count: -1}").Limit(1).Single();
 
             Assert.IsTrue(bookMax.count == 11);
 
-            var bookMin = collection.Find(
-                    BsonSerializer.Deserialize<BsonDocument>("{}"))
+            var bookMin = collection.Find("{}")
                 .Sort("{count: 1}").Limit(1).Single();
 
             Assert.IsTrue(bookMin.count == 1);
@@ -146,27 +142,26 @@ namespace m1001.Queries
         {
             var authors = collection.Distinct(
                     new StringFieldDefinition<Book, string>("author"),
-                    BsonSerializer.Deserialize<BsonDocument>("{}"))
+                    "{}")
                 .ToList();
 
             Assert.IsTrue(authors.Count == 2);
 
             Console.WriteLine(authors
-                .Aggregate((a, b) => a + "\t" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
         public void _05_BooksWithoutAuthor()
         {
-            var books = collection.Find(
-                    BsonSerializer.Deserialize<BsonDocument>("{author: {$exists: false}}"))
+            var books = collection.Find("{author: {$exists: false}}")
                 .ToList();
 
             Assert.IsTrue(books.Count == 2);
 
             Console.WriteLine(books
                 .Select(bk => bk.name)
-                .Aggregate((a, b) => a + "\t" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         private class ReduceResult<T>
@@ -179,6 +174,12 @@ namespace m1001.Queries
         [TestMethod]
         public void _06_IncrementBooksCount()
         {
+            Console.WriteLine(queryable.ToList()
+                .Select(bk => bk.name + "\t" + bk.count)
+                .Aggregate((a, b) => a + "\n" + b));
+
+            Console.WriteLine();
+
             var map = new BsonJavaScript(
                 @"
                 function()
@@ -198,8 +199,8 @@ namespace m1001.Queries
                 .Single().value;
 
             collection.UpdateMany(
-                BsonSerializer.Deserialize<BsonDocument>("{}"),
-                BsonSerializer.Deserialize<BsonDocument>("{$inc: {count: 1}}"));
+                    "{}",
+                    "{$inc: {count: 1}}");
 
             var newOverallCount = collection
                 .MapReduce<ReduceResult<int>>(map, reduce)
@@ -209,7 +210,7 @@ namespace m1001.Queries
 
             Console.WriteLine(queryable.ToList()
                 .Select(bk => bk.name + "\t" + bk.count)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
@@ -218,14 +219,14 @@ namespace m1001.Queries
             var oldGenreCount = queryable.Select(b => b.genre.Length).Max();
 
             collection.UpdateMany(
-                BsonSerializer.Deserialize<BsonDocument>("{genre: 'fantasy'}"),
-                BsonSerializer.Deserialize<BsonDocument>("{$addToSet: {genre: 'favority'}}"));
+                    "{genre: 'fantasy'}",
+                    "{$addToSet: {genre: 'favority'}}");
 
             var newGenreCount = queryable.Select(b => b.genre.Length).Max();
 
             collection.UpdateMany(
-                BsonSerializer.Deserialize<BsonDocument>("{genre: 'fantasy'}"),
-                BsonSerializer.Deserialize<BsonDocument>("{$addToSet: {genre: 'favority'}}"));
+                    "{genre: 'fantasy'}",
+                    "{$addToSet: {genre: 'favority'}}");
 
             var newerGenreCount = queryable.Select(b => b.genre.Length).Max();
 
@@ -235,7 +236,7 @@ namespace m1001.Queries
 
             Console.WriteLine(queryable.ToList()
                 .Select(bk => bk.name + "\t" + bk.genre.Aggregate((a, b) => a + ", " + b))
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
@@ -243,8 +244,7 @@ namespace m1001.Queries
         {
             var oldBooksCount = queryable.Count();
 
-            collection.DeleteMany(
-                BsonSerializer.Deserialize<BsonDocument>("{count: {$gt: 3}}"));
+            collection.DeleteMany("{count: {$lt: 3}}");
 
             var newBooksCount = queryable.Count();
 
@@ -252,14 +252,13 @@ namespace m1001.Queries
 
             Console.WriteLine(queryable.ToList()
                 .Select(bk => bk.name + "\t" + bk.count)
-                .Aggregate((a, b) => a + "\n\n" + b));
+                .Aggregate((a, b) => a + "\n" + b));
         }
 
         [TestMethod]
         public void _09_DeleteAllBooks()
         {
-            collection.DeleteMany(
-                BsonSerializer.Deserialize<BsonDocument>("{}"));
+            collection.DeleteMany("{}");
 
             Assert.IsFalse(queryable.Any());
         }
